@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
 
   <title>Overtime Form</title>
 
@@ -27,41 +28,100 @@
     #fallback {
       display: none;
       text-align: center;
+      max-width: 36rem;
+      padding: 1rem;
     }
 
-    a {
+    #fallback p {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      color: #222;
+    }
+
+    #openFormLink {
       display: inline-block;
-      font-size: 26px;
-      padding: 28px 40px;
+      font-size: 1.25rem;
+      padding: 1rem 1.4rem;
       background: #0078d4;
       color: white;
       text-decoration: none;
-      border-radius: 16px;
+      border-radius: 0.75rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    #openFormLink:focus-visible {
+      outline: 3px solid #003a66;
+      outline-offset: 3px;
     }
   </style>
 
   <script>
-    const FORM_URL = "https://forms.office.com/e/HCD1h0Zd8d"; // ← REPLACE
+    const FORM_URL = "https://forms.office.com/e/HCD1h0Zd8d";
+    const REDIRECT_DELAY_MS = 300;
+    const FALLBACK_DELAY_MS = 1200;
 
-    // Try auto-open after page loads
-    window.onload = function () {
-      setTimeout(() => {
-        window.location.href = FORM_URL;
-      }, 600);
+    function isLikelyValidUrl(url) {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+      } catch {
+        return false;
+      }
+    }
 
-      // If redirect is blocked, show button
+    function showFallback() {
+      const fallback = document.getElementById("fallback");
+      if (fallback) {
+        fallback.style.display = "block";
+      }
+    }
+
+    function redirectToForm(url) {
+      // replace() avoids keeping this launcher in browser history.
+      window.location.replace(url);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const link = document.getElementById("openFormLink");
+
+      if (link && isLikelyValidUrl(FORM_URL)) {
+        link.href = FORM_URL;
+      } else {
+        showFallback();
+        return;
+      }
+
+      let redirectedAway = false;
+
+      window.addEventListener("pagehide", () => {
+        redirectedAway = true;
+      }, { once: true });
+
       setTimeout(() => {
-        document.getElementById("fallback").style.display = "block";
-      }, 1500);
-    };
+        redirectToForm(FORM_URL);
+      }, REDIRECT_DELAY_MS);
+
+      setTimeout(() => {
+        // Show fallback only if we are still on this launcher page.
+        if (!redirectedAway && document.visibilityState === "visible") {
+          showFallback();
+        }
+      }, FALLBACK_DELAY_MS);
+    });
   </script>
 </head>
 
 <body>
   <div id="fallback">
-    <a href="https://forms.office.com/e/HCD1h0Zd8d">
-      Open Overtime Form
-    </a>
+    <p>If the form did not open automatically, use the button below.</p>
+    <a id="openFormLink" href="#" rel="noopener">Open Overtime Form</a>
   </div>
+  <noscript>
+    <div id="noscriptFallback">
+      JavaScript is required for automatic redirect.
+      <a href="https://forms.office.com/e/HCD1h0Zd8d" rel="noopener">Open Overtime Form</a>.
+    </div>
+  </noscript>
 </body>
 </html>
